@@ -3,7 +3,8 @@ import 'package:drawing_tool/app/repository/brush.dart';
 import 'package:drawing_tool/app/views/drawing_editor.dart';
 import 'package:flutter/material.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 

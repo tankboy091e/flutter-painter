@@ -11,15 +11,27 @@ class DrawingEditorController extends Controller {
 
   late List<BrushModel> _brushs;
 
+  List<Color> get brushColors => _brushs.map((e) => e.color).toList();
+
   late int _brushIndex;
 
   int get brushIndex => _brushIndex;
 
   BrushModel get _selectedBrush => _brushs[_brushIndex];
 
-  late List<LineModel> _lines;
+  late List<LineModel> _paintLines;
 
-  List<LineModel> get lines => _lines;
+  List<LineModel> get paintLines => _paintLines;
+
+  late LineModel _eraseLine;
+
+  LineModel get eraseLine => _eraseLine;
+
+  List<LineModel> get _currentLines {
+    return _paintLines;
+  }
+
+  late Offset _lastOrigin;
 
   DrawingEditorController({
     required this.brushRepository,
@@ -28,7 +40,13 @@ class DrawingEditorController extends Controller {
 
     _brushIndex = 0;
 
-    _lines = [];
+    _paintLines = [];
+
+    _eraseLine = LineModel(
+      brush: _brushs
+          .firstWhere((element) => element.brushType == BrushType.eraser),
+      paths: [],
+    );
   }
 
   void attachContext(BuildContext context) {
@@ -36,29 +54,51 @@ class DrawingEditorController extends Controller {
   }
 
   void onPanStart(DragStartDetails details) {
+    _lastOrigin = Offset.zero;
+
     final point = _getLocalPosition(details.globalPosition);
 
-    final line = LineModel(
-      brush: _selectedBrush,
-      paths: [
-        point,
-      ],
-    );
-
-    _lines.add(line);
+    _createFirstPoint(point);
 
     notify();
+  }
+
+  void _createFirstPoint(Offset point) {
+    final line = LineModel(
+      brush: _selectedBrush,
+      paths: [point],
+    );
+
+    _currentLines.add(line);
   }
 
   void onPanUpdate(DragUpdateDetails details) {
+    _lastOrigin += details.delta;
+
+    if (_lastOrigin.distance < 1) {
+      return;
+    }
+
+    _lastOrigin = Offset.zero;
+
     final point = _getLocalPosition(details.globalPosition);
 
-    _lines.last.paths.add(point);
+    _addConitunousPoint(point);
 
     notify();
   }
 
+  void _addConitunousPoint(Offset point) {
+    _currentLines.last.paths.add(point);
+  }
+
   void onPanEnd(DragEndDetails details) {
+    notify();
+  }
+
+  Future<void> onSelectBrush(int index) async {
+    _brushIndex = index;
+
     notify();
   }
 
